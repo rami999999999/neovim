@@ -21,6 +21,11 @@
 #include "nvim/version.h"
 #include "nvim/map.h"
 
+#ifdef UNIX
+#include <pwd.h>
+#include <unistd.h>
+#endif
+
 #ifdef WIN32
 #include "nvim/mbyte.h"  // for utf8_to_utf16, utf16_to_utf8
 #endif
@@ -458,6 +463,20 @@ void init_homedir(void)
   }
 #endif
 
+#ifdef UNIX
+  // Gets home dir when HOME is not set
+  if (var == NULL) {
+    uid_t uid = getuid();
+    struct passwd *pw = getpwuid(uid);
+
+    if (pw == NULL) {
+      var = xmalloc(3);
+      var = "./";
+    }
+    var = pw -> pw_dir;
+  }
+#endif
+  
   if (var != NULL) {
 #ifdef UNIX
     // Change to the directory and get the actual path.  This resolves
